@@ -62,11 +62,30 @@ function love.update(dt)
     end
 end
 
+function estimarGasNecesario(aceleracion, angulo, velocidad, alturaMax, decay, dt)
+    local y = 0
+    local vy = velocidad * math.sin(math.rad(angulo))
+    local gas = 0
+
+    while y < alturaMax and aceleracion > 0.1 do
+        local ay = aceleracion * math.sin(math.rad(angulo)) - gravedad
+        vy = vy + ay * dt
+        y = y + vy * dt
+
+        aceleracion = aceleracion * decay
+        gas = gas + dt
+    end
+
+    return gas -- segundos de gas necesarios
+end
 
 
 function love.mousepressed( x, y, button, istouch, presses )
   if button == 1 then
-    local cohete = Cohete:new(x, y, 3, 10,500, math.random(75,105), 2, math.random(3,5)) -- (x, y, w, h, aceleracion, angulo, velocidad, gas)
+    local altura_usable = love.graphics.getHeight() * 0.8
+    local angulo =  math.random(75,105)
+    local gas_suficiente = estimarGasNecesario(500,  angulo, 2, altura_usable, 0.98, 1/60)
+    local cohete = Cohete:new(x, y, 3, 10,500, angulo, 2, gas_suficiente) -- (x, y, w, h, aceleracion, angulo, velocidad, gas)
     table.insert(cohetes, cohete)
   end
 end
@@ -85,6 +104,7 @@ function love.draw()
        love.graphics.setShader(shader2)
         cohete:draw()
         love.graphics.setShader()
+        love.graphics.print("Gas:" .. cohete.gas, cohete.x, cohete.y)
     end
 
     for _, exp in ipairs(explosiones) do
